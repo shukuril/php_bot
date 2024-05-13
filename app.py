@@ -1,54 +1,50 @@
-from aiohttp import web
-import aiohttp
-import asyncio
-from aiogram import Bot, Dispatcher, types
-from aiogram.contrib.middlewares.logging import LoggingMiddleware
-from aiogram.utils import executor
+import requests
+import os
+from flask import Flask, request
+from datetime import datetime
 
-API_TOKEN = '6709308319:AAGRwA-HBuEtO7wVXIkwrl-dhHJ7pToHjFg'  # Укажите свой токен API от BotFather
+app = Flask(__name__)
 
-bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot)
-app = web.Application()
+# Токен телеграм бота
+tg_bot_token = "6709308319:AAGRwA-HBuEtO7wVXIkwrl-dhHJ7pToHjFg"
+# ID Чата
+chat_id = "-1002037056729"
 
-# Эндпоинт для приема данных от клиента
-async def submit_order(request):
-    data = await request.json()
+@app.route('/submit_form', methods=['POST'])
+def submit_form():
+    text = ''
+    for key, val in request.form.items():
+        text += f"{key}: {val}\n"
 
-    name = data['name']
-    phone = data['phone']
-    address = data['address']
-    items = data['items']
+    text += f"\n{request.remote_addr}"
+    text += f"\n{datetime.now().strftime('%d.%m.%y %H:%M:%S')}"
 
-    # Отправка данных в AIogram
-    await bot.send_message(chat_id='-1002037056729', text=f'New Order:\nName: {name}\nPhone: {phone}\nAddress: {address}')
+    # Добавляем ссылку на сайт для получения данных из корзины
+    text += "\nКорзина: https://shukuril.github.io/php_bot/"
 
-    for item in items:
-        title = item['title']
-        price = item['price']
-        quantity = item['quantity']
-        product_img = item['productImg']
-        size = item['size']
-        color = item['color']
-        product_id = item['productId']
+    # Отправка сообщения в телеграм
+    url = f"https://api.telegram.org/bot{tg_bot_token}/sendMessage"
+    params = {
+        "chat_id": chat_id,
+        "text": text
+    }
+    requests.post(url, data=params)
 
-        message = f'Product: {title}\nPrice: {price}\nQuantity: {quantity}\nSize: {size}\nColor: {color}\nProduct ID: {product_id}\n\n'
-        await bot.send_message(chat_id='your_chat_id', text=message)
+    # Отправка файлов в телеграм
+    for file in request.files.values():
+        url = f"https://api.telegram.org/bot{tg_bot_token}/sendDocument"
 
-    return web.json_response({'status': 'ok'})
+        file.save(file.filename)
 
-app.router.add_post('/submit_order', submit_order)
+        with open(file.filename, 'rb') as f:
+            files = {'document': f}
+            params = {"chat_id": chat_id}
+            requests.post(url, files=files, data=params)
 
-# Запуск сервера
-async def on_startup(app):
-    await bot.send_message(chat_id='-1002037056729', text="Server started")
+        os.remove(file.filename)
 
-async def on_shutdown(app):
-    await bot.send_message(chat_id='-1002037056729', text="Server stopped")
-
-app.on_startup.append(on_startup)
-app.on_shutdown.append(on_shutdown)
+    # Ответ об успешном выполнении
+    return '1'
 
 if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
-    web.run_app(app, host='localhost', port=8080)
+    app.run(debug=True)
