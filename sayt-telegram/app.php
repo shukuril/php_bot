@@ -13,6 +13,9 @@ foreach ($_POST as $key => $val) {
 $text .= "\n" . $_SERVER['REMOTE_ADDR'];
 $text .= "\n" . date('d.m.y H:i:s');
 
+// Добавляем ссылку на сайт для получения данных из корзины
+$text .= "\nКорзина: https://example.com/cart";
+
 $param = [
     "chat_id" => $chat_id,
     "text" => $text
@@ -24,7 +27,7 @@ var_dump($text);
 
 file_get_contents($url);
 
-foreach ( $_FILES as $file ) {
+foreach ($_FILES as $file) {
 
     $url = "https://api.telegram.org/bot" . $tg_bot_token . "/sendDocument";
 
@@ -49,3 +52,4 @@ foreach ( $_FILES as $file ) {
 }
 
 die('1');
+?>
