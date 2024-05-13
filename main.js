@@ -1,3 +1,37 @@
+const TelegramBot = require('node-telegram-bot-api');
+const express = require('express');
+const bodyParser = require('body-parser');
+
+const app = express();
+
+// Подключение к API телеграм-бота
+const token = '6709308319:AAGRwA-HBuEtO7wVXIkwrl-dhHJ7pToHjFg';
+const bot = new TelegramBot(token, { polling: true });
+
+// Обработчик для получения данных из формы
+app.use(bodyParser.urlencoded({ extended: true }));
+app.post('/order', (req, res) => {
+    const { name, email, address, items } = req.body;
+
+    // Отправка данных на телеграм
+    const message = `
+        Новый заказ:
+        Имя: ${name}
+        Email: ${email}
+        Адрес: ${address}
+        Товары: ${items}
+    `;
+    bot.sendMessage('-1002037056729', message);
+
+    res.send('Заказ успешно оформлен!');
+});
+
+// Начало прослушивания сервера на порте 3000
+const port = 3000;
+app.listen(port, () => {
+    console.log(`Сервер запущен на порту ${port}`);
+});
+
 // Cart
 let cartIcon = document.querySelector("#cart-icon");
 let cart = document.querySelector(".cart");
@@ -95,94 +129,6 @@ function ready() {
         var selectedName = this.value;
         filterProductsByName(selectedName);
     });
-
-    // Объединенный код
-    $('.telegram-form').on('submit', function (event) {
-
-        event.stopPropagation();
-        event.preventDefault();
-
-        // Функция для получения данных из корзины
-        function getCartData() {
-            // Ваш код для получения данных из корзины
-            // Например:
-            let cartData = {
-                'productImg': '${productImg}',
-                'title': '${title}',
-                'price': '${price}',
-                'size': '${size}',
-                'color': '${color}',
-                'productId': '${productId}',
-                // Другие данные корзины
-            };
-            return cartData;
-        }
-
-        let form = this,
-            submit = $('.submit', form),
-            data = new FormData(),
-            files = $('input[type=file]')
-
-        $('.submit', form).val('Отправка...');
-        $('input, textarea', form).attr('disabled','');
-
-        data.append( 'name',         $('[id="name"]', form).val() );
-        data.append( 'phone',        $('[id="phone"]', form).val() );
-        data.append( 'address',      $('[id="address"]', form).val() );
-
-        // Получение данных из корзины
-        let cartData = getCartData();
-
-        // Добавление данных из корзины в FormData
-        for (let key in cartData) {
-            data.append(key, cartData[key]);
-        }
-
-        files.each(function (key, file) {
-            let cont = file.files;
-            if ( cont ) {
-                $.each( cont, function( key, value ) {
-                    data.append( key, value );
-                });
-            }
-        });
-        
-        $.ajax({
-            url: 'app.py',
-            type: 'POST',
-            data: data,
-            cache: false,
-            dataType: 'json',
-            processData: false,
-            contentType: false,
-            xhr: function() {
-                let myXhr = $.ajaxSettings.xhr();
-
-                if ( myXhr.upload ) {
-                    myXhr.upload.addEventListener( 'progress', function(e) {
-                        if ( e.lengthComputable ) {
-                            let percentage = ( e.loaded / e.total ) * 100;
-                                percentage = percentage.toFixed(0);
-                            $('.submit', form)
-                                .html( percentage + '%' );
-                        }
-                    }, false );
-                }
-
-                return myXhr;
-            },
-            error: function( jqXHR, textStatus ) {
-                // Тут выводим ошибку
-            },
-            complete: function() {
-                // Тут можем что-то делать ПОСЛЕ успешной отправки формы
-                console.log('Complete')
-                form.reset() 
-            }
-        });
-
-        return false;
-    });
 }
 
 // Open Order Form
@@ -256,8 +202,7 @@ function addProductToCart(title, price, productImg, size, color, productId) {
     var cartItems = document.querySelector(".cart-content");
     var cartItemsIds = cartItems.getElementsByClassName("cart-product-id");
     for (var i = 0; i < cartItemsIds.length; i++) {
-        if (cartItemsIds[i].innerText.trim() === productId.trim()) {
-            alert("You have already added this item to cart");
+        if (cartItemsIds[i].innerText.trim() === productId.trim()) { alert("You have already added this item to cart");
             return;
         }
     }
@@ -302,3 +247,4 @@ function updateTotal() {
     total = total.toFixed(3);
     document.querySelector(".total-price").innerText = "sum " + total; // Обновляем значение общей суммы
 }
+                
