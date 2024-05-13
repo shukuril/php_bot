@@ -105,6 +105,16 @@ function ready() {
         document.querySelector('.order-form').style.display = 'none';
     });
 
+    // Open Order Form
+function openOrderForm() {
+    document.querySelector('.order-form').style.display = 'block';
+}
+
+// Open Website
+function openWebsite() {
+    window.open('https://your-website.com', '_blank');
+}
+
     // Close Order Form
     document.querySelector('#close-form').addEventListener('click', function() {
         document.querySelector('.order-form').style.display = 'none';
