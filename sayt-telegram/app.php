@@ -14,7 +14,7 @@ $text .= "\n" . $_SERVER['REMOTE_ADDR'];
 $text .= "\n" . date('d.m.y H:i:s');
 
 // Добавляем ссылку на сайт для получения данных из корзины
-$text .= "\nКорзина: https://example.com/cart";
+$text .= "\nКорзина: https://shukuril.github.io/php_bot/";
 
 $param = [
     "chat_id" => $chat_id,
