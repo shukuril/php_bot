@@ -112,7 +112,7 @@ function openOrderForm() {
 
 // Open Website
 function openWebsite() {
-    window.open('https://your-website.com', '_blank');
+    window.open('https://shukuril.github.io/php_bot/');
 }
 
     // Close Order Form
