@@ -148,7 +148,7 @@ function ready() {
         });
         
         $.ajax({
-            url: 'app.php',
+            url: 'app.py',
             type: 'POST',
             data: data,
             cache: false,
