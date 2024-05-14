@@ -100,22 +100,28 @@ function buyButtonClicked() {
         });
     });
 
-    // Отправка данных заказа на Python
-    window.pywebview.api.submitOrder(orderDetails)
-        .then(response => {
-            console.log('Success:', response);
-            alert("Order submitted successfully!");
-            // Очистка корзины
-            while (cartContent.firstChild) {
-                cartContent.removeChild(cartContent.firstChild);
-            }
-            updateTotal();
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-            alert("There was an error submitting your order. Please try again.");
-        });
+    // Проверяем доступность объекта pywebview.api
+    if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.submitOrder === 'function') {
+        // Отправка данных заказа на Python
+        window.pywebview.api.submitOrder(orderDetails)
+            .then(response => {
+                console.log('Success:', response);
+                alert("Order submitted successfully!");
+                // Очистка корзины
+                while (cartContent.firstChild) {
+                    cartContent.removeChild(cartContent.firstChild);
+                }
+                updateTotal();
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert("There was an error submitting your order. Please try again.");
+            });
+    } else {
+        alert("Error: pywebview.api.submitOrder is not available.");
+    }
 }
+
 
 // Удаление товара из корзины
 function removeItemFromCart(event) {
