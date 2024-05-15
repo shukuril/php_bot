@@ -1,209 +1,173 @@
-// Получение элементов корзины
+// Selectors for cart elements
 let cartIcon = document.querySelector("#cart-icon");
 let cart = document.querySelector(".cart");
 let closeCart = document.querySelector("#close-cart");
 
-// Открытие корзины
+// Open Cart
 cartIcon.addEventListener("click", () => {
     cart.classList.add("active");
 });
 
-// Закрытие корзины
-closeCart.onclick = () => {
+// Close Cart
+closeCart.addEventListener("click", () => {
     cart.classList.remove("active");
-};
+});
 
-// Работа с корзиной
-if (document.readyState == 'loading') {
+// Wait for the DOM to load before running the ready function
+if (document.readyState === 'loading') {
     document.addEventListener("DOMContentLoaded", ready);
 } else {
     ready();
 }
 
-// Функция инициализации
 function ready() {
-    // Удаление товара из корзины
-    var removeCartButtons = document.getElementsByClassName("cart-remove");
-    for (var i = 0; i < removeCartButtons.length; i++) {
-        var button = removeCartButtons[i];
+    // Add event listeners to cart remove buttons
+    let removeCartButtons = document.querySelectorAll(".cart-remove");
+    removeCartButtons.forEach(button => {
         button.addEventListener("click", removeItemFromCart);
-    }
+    });
 
-    // Изменение количества товара
-    var quantityInputs = document.getElementsByClassName("cart-quantity");
-    for (var i = 0; i < quantityInputs.length; i++) {
-        var input = quantityInputs[i];
+    // Add event listeners to quantity inputs
+    let quantityInputs = document.querySelectorAll(".cart-quantity");
+    quantityInputs.forEach(input => {
         input.addEventListener("change", quantityChanged);
-    }
+    });
 
-    // Добавление товара в корзину
-    var addCart = document.getElementsByClassName('add-cart');
-    for (var i = 0; i < addCart.length; i++) {
-        var button = addCart[i];
+    // Add event listeners to "add to cart" buttons
+    let addCartButtons = document.querySelectorAll('.add-cart');
+    addCartButtons.forEach(button => {
         button.addEventListener("click", addItemToCart);
-    }
+    });
 
-    // Обработчик кнопки покупки
-    document
-        .getElementsByClassName("btn-buy")[0]
-        .addEventListener("click", buyButtonClicked);
+    // Add event listener to the buy button
+    document.querySelector(".btn-buy").addEventListener("click", buyButtonClicked);
 
-    // Фильтрация товаров по названию
+    // Add event listener to filter products by name
     document.getElementById('name-filter').addEventListener('change', function() {
-        var filterValue = this.value.toLowerCase();
-        var productBoxes = document.querySelectorAll('.product-box');
-        productBoxes.forEach(function(box) {
-            var productName = box.querySelector('.product-title').innerText.toLowerCase();
-            if (filterValue === 'all' || productName === filterValue) {
-                box.style.display = 'block';
-            } else {
-                box.style.display = 'none';
-            }
+        let filterValue = this.value.toLowerCase();
+        let productBoxes = document.querySelectorAll('.product-box');
+        productBoxes.forEach(box => {
+            let productName = box.querySelector('.product-title').innerText.toLowerCase();
+            box.style.display = (filterValue === 'all' || productName === filterValue) ? 'block' : 'none';
         });
     });
 }
 
-// Функция открытия формы заказа
-function openOrderForm() {
-    document.querySelector('.order-form').style.display = 'block';
-}
-
-// Обработчик кнопки покупки
+// Handle the buy button click
 function buyButtonClicked() {
-    var cartContent = document.querySelector(".cart-content");
-    var items = cartContent.querySelectorAll('.cart-box');
+    let cartContent = document.querySelector(".cart-content");
+    let items = cartContent.querySelectorAll('.cart-box');
 
     if (items.length === 0) {
         alert("Your cart is empty. Please add items to your cart before proceeding to checkout.");
         return;
     }
 
-    var orderDetails = [];
+    let message = "Order Details:\n";
+    items.forEach(item => {
+        let imgSrc = item.querySelector('.cart-img').src;
+        let title = item.querySelector('.cart-product-title').innerText;
+        let price = item.querySelector('.cart-price').innerText;
+        let quantity = item.querySelector('.cart-quantity').value;
+        let size = item.querySelector('.cart-size').innerText.replace('Size: ', '');
+        let color = item.querySelector('.cart-color').innerText.replace('Color: ', '');
+        
 
-    items.forEach(function(item) {
-        var title = item.querySelector('.cart-product-title').innerText;
-        var price = item.querySelector('.cart-price').innerText;
-        var quantity = item.querySelector('.cart-quantity').value;
-        var size = item.querySelector('.cart-size').innerText;
-        var color = item.querySelector('.cart-color').innerText;
-        var imageSrc = item.querySelector('.cart-img').getAttribute('src');
-        var productId = item.querySelector('.cart-product-id').innerText;
-
-        orderDetails.push({
-            title: title,
-            price: price,
-            quantity: quantity,
-            size: size,
-            color: color,
-            imageSrc: imageSrc,
-            productId: productId
-        });
+        message += `\n Image: ${imgSrc}\n  ${title}\n  Price: ${price}\n  Quantity: ${quantity}\n  Size: ${size}\n  Color: ${color}\n`;
     });
 
-    // Проверяем доступность объекта pywebview.api
-    if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.submitOrder === 'function') {
-        // Отправка данных заказа на Python
-        window.pywebview.api.submitOrder(orderDetails)
-            .then(response => {
-                console.log('Success:', response);
-                alert("Order submitted successfully!");
-                // Очистка корзины
-                while (cartContent.firstChild) {
-                    cartContent.removeChild(cartContent.firstChild);
-                }
-                updateTotal();
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-                alert("There was an error submitting your order. Please try again.");
-            });
-    } else {
-        alert("Error: pywebview.api.submitOrder is not available.");
+    console.log(message);
+
+    // Clear the cart after purchase
+    while (cartContent.firstChild) {
+        cartContent.removeChild(cartContent.firstChild);
     }
-}
 
-
-// Удаление товара из корзины
-function removeItemFromCart(event) {
-    var buttonClicked = event.target;
-    buttonClicked.parentNode.remove();
     updateTotal();
 }
 
-// Изменение количества товара
+// Remove an item from the cart
+function removeItemFromCart(event) {
+    let buttonClicked = event.target;
+    buttonClicked.parentElement.remove();
+    updateTotal();
+}
+
+// Handle quantity changes
 function quantityChanged(event) {
-    var input = event.target;
+    let input = event.target;
     if (isNaN(input.value) || input.value <= 0) {
         input.value = 1;
     }
     updateTotal();
 }
 
-// Добавление товара в корзину
+// Add an item to the cart
 function addItemToCart(event) {
-    var button = event.target;
-    var shopProducts = button.parentElement;
-    var title = shopProducts.querySelector(".product-title").innerText;
-    var price = shopProducts.querySelector(".price").innerText;
-    var productImg = shopProducts.querySelector(".product-img").src;
-    var size = shopProducts.querySelector(".size-selector").value;
-    var color = shopProducts.querySelector(".color-selector").value;
-    var productId = shopProducts.dataset.productId;
+    let button = event.target;
+    let shopProducts = button.parentElement;
+    let title = shopProducts.querySelector(".product-title").innerText;
+    let price = shopProducts.querySelector(".price").innerText;
+    let productImg = shopProducts.querySelector(".product-img").src;
+    let size = shopProducts.querySelector(".size-selector").value;
+    let color = shopProducts.querySelector(".color-selector").value;
+    let productId = shopProducts.dataset.productId;
 
     addProductToCart(title, price, productImg, size, color, productId);
     updateTotal();
 }
 
-// Добавление продукта в корзину
+// Add a product to the cart
 function addProductToCart(title, price, productImg, size, color, productId) {
-    var cartShopBox = document.createElement("div");
-    cartShopBox.classList.add("cart-box");
-    var cartItems = document.querySelector(".cart-content");
-    var cartItemsData = cartItems.getElementsByClassName("cart-box");
-    
-    for (var i = 0; i < cartItemsData.length; i++) {
-        var itemId = cartItemsData[i].querySelector(".cart-product-id").innerText.trim();
-        var itemSize = cartItemsData[i].querySelector(".cart-size").innerText.trim();
-        var itemColor = cartItemsData[i].querySelector(".cart-color").innerText.trim();
-        if (itemId === productId.trim() && itemSize === size && itemColor === color) {
-            alert("You have already added this item with the same size and color to the cart");
+    let cartItems = document.querySelector(".cart-content");
+
+    // Create a unique key for each combination of productId, size, and color
+    let productKey = productId + '-' + size + '-' + color;
+    let cartItemsKeys = cartItems.getElementsByClassName("cart-product-key");
+
+    for (let i = 0; i < cartItemsKeys.length; i++) {
+        if (cartItemsKeys[i].innerText.trim() === productKey.trim()) {
+            alert("You have already added this item to cart with the same size and color");
             return;
         }
     }
 
-    var cartBoxContent = `
+    let cartShopBox = document.createElement("div");
+    cartShopBox.classList.add("cart-box");
+
+    let cartBoxContent = `
         <img src="${productImg}" alt="" class="cart-img">
         <div class="detail-box">
             <div class="cart-product-title">${title}</div>
             <div class="cart-price">${price}</div>
-            <div class="cart-size">${size}</div>
-            <div class="cart-color">${color}</div>
+            <div class="cart-size">Size: ${size}</div>
+            <div class="cart-color">Color: ${color}</div>
             <input type="number" value="1" class="cart-quantity">
         </div>
-        <!-- Remove Cart -->
         <i class='bx bx-trash-alt cart-remove'></i>
         <div class="cart-product-id" style="display: none;">${productId}</div>
+        <div class="cart-product-key" style="display: none;">${productKey}</div>
     `;
-    
+
     cartShopBox.innerHTML = cartBoxContent;
     cartItems.append(cartShopBox);
 
-    cartShopBox.getElementsByClassName("cart-remove")[0].addEventListener("click", removeItemFromCart);
+    // Add event listeners for the new cart item
+    cartShopBox.querySelector(".cart-remove").addEventListener("click", removeItemFromCart);
     cartShopBox.querySelector('.cart-quantity').addEventListener("change", quantityChanged);
 }
 
-// Обновление общей суммы
+// Update the total price in the cart
 function updateTotal() {
-    var cartBoxes = document.querySelectorAll('.cart-box');
-    var total = 0;
-    for (var i = 0; i < cartBoxes.length; i++) {
-        var cartBox = cartBoxes[i];
-        var priceElement = cartBox.querySelector('.cart-price');
-        var quantityElement = cartBox.querySelector('.cart-quantity');
-        var price = parseFloat(priceElement.innerText.replace("sum ", "").replace(",", ""));
-        var quantity = quantityElement.value;
+    let cartBoxes = document.querySelectorAll('.cart-box');
+    let total = 0;
+    cartBoxes.forEach(cartBox => {
+        let priceElement = cartBox.querySelector('.cart-price');
+        let quantityElement = cartBox.querySelector('.cart-quantity');
+        let price = parseFloat(priceElement.innerText.replace("sum ", "").replace(",", ""));
+        let quantity = quantityElement.value;
         total += price * quantity;
-    }
+    });
     total = total.toFixed(3);
     document.querySelector(".total-price").innerText = "sum " + total;
 }
