@@ -75,7 +75,7 @@ function buyButtonClicked() {
         let size = item.querySelector('.cart-size').innerText.replace('Size: ', '');
         let color = item.querySelector('.cart-color').innerText.replace('Color: ', '');
 
-        message += `\n\n\tИзображение: ${imgSrc}\n\n\tНазвание: ${title}\n\n\tЦена: ${price}\n\n\tКоличество: ${quantity}\n\n\tРазмер: ${size}\n\n\tЦвет: ${color}\n`;
+        message += `\n\n\tНазвание: ${title}\n\n\tЦена: ${price}\n\n\tКоличество: ${quantity}\n\n\tРазмер: ${size}\n\n\tЦвет: ${color}\n`;
     });
 
     if (tg) {
