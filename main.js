@@ -79,7 +79,7 @@ function buyButtonClicked() {
     });
 
     if (tg) {
-        tg.sendData("1");
+        tg.sendData(message);
         // Очистка корзины после покупки
         while (cartContent.firstChild) {
             cartContent.removeChild(cartContent.firstChild);
