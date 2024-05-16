@@ -78,9 +78,16 @@ function buyButtonClicked() {
         message += `\n\n\tИзображение: ${imgSrc}\n\n\tНазвание: ${title}\n\n\tЦена: ${price}\n\n\tКоличество: ${quantity}\n\n\tРазмер: ${size}\n\n\tЦвет: ${color}\n`;
     });
 
-    Telegram.WebApp.onEvent(buyButtonClicked, function(){
+    if (tg) {
         tg.sendData(message);
-    });
+        // Очистка корзины после покупки
+        while (cartContent.firstChild) {
+            cartContent.removeChild(cartContent.firstChild);
+        }
+        updateTotal();
+    } else {
+        console.error("Telegram Web App недоступен.");
+    }
 }
 
 // Удаление товара из корзины
