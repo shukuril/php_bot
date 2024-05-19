@@ -70,8 +70,19 @@ function buyButtonClicked() {
     items.forEach(item => {
         let imgSrc = item.querySelector('.cart-img').src;
         let title = item.querySelector('.cart-product-title').innerText;
+        let price = item.querySelector('.cart-price').innerText;
+        let quantity = item.querySelector('.cart-quantity').value;
+        let size = item.querySelector('.cart-size').innerText.replace('Размер: ', '');
+        let color = item.querySelector('.cart-color').innerText.replace('Цвет: ', '');
 
-        products.push({ title: title, imgSrc: imgSrc });
+        products.push({ 
+            imgSrc: imgSrc,
+            title: title,
+            price: price,
+            quantity: quantity,
+            size: size,
+            color: color
+        });
     });
 
     if (tg) {
@@ -85,6 +96,7 @@ function buyButtonClicked() {
         console.error("Telegram Web App недоступен.");
     }
 }
+
 
 
 
