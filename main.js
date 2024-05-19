@@ -97,7 +97,6 @@ function buyButtonClicked() {
     }
 }
 
-
 // Удаление товара из корзины
 function removeItemFromCart(event) {
     let buttonClicked = event.target;
