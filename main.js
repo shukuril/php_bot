@@ -65,15 +65,17 @@ function buyButtonClicked() {
         return;
     }
 
-    // Отправка изображений товаров
-    let images = [];
+    // Собираем данные о каждом товаре в корзине
+    let products = [];
     items.forEach(item => {
         let imgSrc = item.querySelector('.cart-img').src;
-        images.push(imgSrc);
+        let title = item.querySelector('.cart-product-title').innerText;
+
+        products.push({ title: title, imgSrc: imgSrc });
     });
 
     if (tg) {
-        tg.sendData(JSON.stringify(images)); // Отправка изображений в виде массива JSON
+        tg.sendData(JSON.stringify(products)); // Отправка данных о товарах в виде массива JSON
         // Очистка корзины после покупки
         while (cartContent.firstChild) {
             cartContent.removeChild(cartContent.firstChild);
@@ -83,6 +85,7 @@ function buyButtonClicked() {
         console.error("Telegram Web App недоступен.");
     }
 }
+
 
 
 // Удаление товара из корзины
