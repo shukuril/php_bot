@@ -65,8 +65,8 @@ function buyButtonClicked() {
         return;
     }
 
-    // Собираем данные о каждом товаре в корзине
-    let products = [];
+    // Формирование массива с деталями заказа
+    let orderDetails = [];
     items.forEach(item => {
         let imgSrc = item.querySelector('.cart-img').src;
         let title = item.querySelector('.cart-product-title').innerText;
@@ -75,7 +75,7 @@ function buyButtonClicked() {
         let size = item.querySelector('.cart-size').innerText.replace('Размер: ', '');
         let color = item.querySelector('.cart-color').innerText.replace('Цвет: ', '');
 
-        products.push({ 
+        orderDetails.push({
             imgSrc: imgSrc,
             title: title,
             price: price,
@@ -85,16 +85,27 @@ function buyButtonClicked() {
         });
     });
 
-    if (tg) {
-        tg.sendData(JSON.stringify(products)); // Отправка данных о товарах в виде массива JSON
-        // Очистка корзины после покупки
-        while (cartContent.firstChild) {
-            cartContent.removeChild(cartContent.firstChild);
+    // Отправка данных на сервер
+    axios.post('/cart.php', {
+        orderDetails: orderDetails
+    })
+    .then(response => {
+        if (response.data.success) {
+            alert("Заказ успешно оформлен!");
+
+            // Очистка корзины после покупки
+            while (cartContent.firstChild) {
+                cartContent.removeChild(cartContent.firstChild);
+            }
+            updateTotal();
+        } else {
+            alert("Произошла ошибка при оформлении заказа. Пожалуйста, попробуйте снова.");
         }
-        updateTotal();
-    } else {
-        console.error("Telegram Web App недоступен.");
-    }
+    })
+    .catch(error => {
+        console.error("Произошла ошибка при отправке данных:", error);
+        alert("Произошла ошибка при отправке данных. Пожалуйста, попробуйте снова.");
+    });
 }
 
 // Удаление товара из корзины
