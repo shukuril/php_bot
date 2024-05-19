@@ -102,7 +102,21 @@ async def send_summary(message: types.Message, state: FSMContext):
 @dp.message_handler(content_types=['web_app_data'])
 async def web_app(message: types.Message):
     res = json.loads(message.web_app_data.data)
-    await send_data_to_telegram(res)
+    formatted_message = ""
+    
+    for item in res:
+        formatted_message += (
+            f"Фото: {item['imgSrc']}\n"
+            f"Имя: {item['title']}\n"
+            f"Цена: {item['price']}\n"
+            f"Кол-во: {item['quantity']}\n"
+            f"Размер: {item['size']}\n"
+            f"Цвет: {item['color']}\n"
+            f"===================\n"
+        )
+
+    await send_data_to_telegram(formatted_message)
+    await message.answer("Данные из корзины получены и отправлены в Telegram.")
 
 @dp.message_handler(commands=['fetch_data'])
 async def fetch_and_send_data(message: types.Message):
