@@ -1,73 +1,117 @@
-import sys
 import json
-import requests
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtWebEngineWidgets import QWebEngineView
+import aiohttp
+import asyncio
 from aiogram import Bot, Dispatcher, executor, types
-from aiogram.types.web_app_info import WebAppInfo
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo, ReplyKeyboardRemove
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters.state import State, StatesGroup
 
-API_TOKEN = '6709308319:AAGRwA-HBuEtO7wVXIkwrl-dhHJ7pToHjFg'
-CHAT_ID = '-1002037056729'
+# Initialize bot and dispatcher with memory storage
+bot = Bot('6709308319:AAGRwA-HBuEtO7wVXIkwrl-dhHJ7pToHjFg')
+storage = MemoryStorage()
+dp = Dispatcher(bot, storage=storage)
 
-bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot)
+# Define states
+class Form(StatesGroup):
+    name = State()
+    location = State()
+    manual_location = State()
+    phone_number = State()
+    manual_phone_number = State()
 
-class Api:
-    def submit_order(self, order_details):
-        print("Order details received:", order_details)
-        return "Order processed successfully"
+# Temporary storage for user data
+user_data = {}
 
+# Function for sending data to Telegram
 async def send_data_to_telegram(data):
-    try:
-        await bot.send_message(chat_id=CHAT_ID, text=data)
-    except Exception as e:
-        print("Error sending message to Telegram:", e)
+    await bot.send_message(chat_id="-1002037056729", text=data)
 
-def fetch_data_from_website():
+# Function for fetching data from a website
+async def fetch_data_from_website():
     try:
-        response = requests.get('')
-        if response.status_code == 200:
-            return response.json()
-        else:
-            print("Failed to fetch data from the website. Status code:", response.status_code)
-            return None
+        async with aiohttp.ClientSession() as session:
+            async with session.get('https://shukuril.github.io/php_bot/') as response:
+                data = await response.json()
+                return data
     except Exception as e:
-        print("Error fetching data from the website:", e)
+        print("Error fetching data from website:", e)
         return None
 
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
-    inline_markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    inline_markup.add(types.KeyboardButton('Open Web Page', web_app=WebAppInfo(url='')))
-    await message.answer('Hello', reply_markup=inline_markup)
+    await Form.name.set()
+    await message.answer('Привет! Как вас зовут?', reply_markup=ReplyKeyboardRemove())
+
+@dp.message_handler(state=Form.name)
+async def ask_name(message: types.Message, state: FSMContext):
+    user_data['name'] = message.text
+    location_markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    location_markup.add(KeyboardButton('Отправить геолокацию', request_location=True))
+    location_markup.add(KeyboardButton('Ввести вручную'))
+    await Form.next()
+    await message.answer('Пожалуйста, укажите место доставки:', reply_markup=location_markup)
+
+@dp.message_handler(lambda message: message.text == 'Ввести вручную', state=Form.location)
+async def manual_location(message: types.Message):
+    await Form.manual_location.set()
+    await message.answer('Пожалуйста, введите место доставки:')
+
+@dp.message_handler(state=Form.manual_location)
+async def receive_manual_location(message: types.Message, state: FSMContext):
+    user_data['location'] = message.text
+    await ask_phone_number(message)
+
+@dp.message_handler(content_types=['location'], state=Form.location)
+async def receive_location(message: types.Message, state: FSMContext):
+    latitude = message.location.latitude
+    longitude = message.location.longitude
+    user_data['location'] = f"https://www.google.com/maps/search/?api=1&query={latitude},{longitude}"
+    await ask_phone_number(message)
+
+async def ask_phone_number(message: types.Message):
+    phone_markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    phone_markup.add(KeyboardButton('Отправить номер телефона', request_contact=True))
+    phone_markup.add(KeyboardButton('Ввести вручную'))
+    await Form.phone_number.set()
+    await message.answer('Пожалуйста, отправьте ваш номер телефона:', reply_markup=phone_markup)
+
+@dp.message_handler(lambda message: message.text == 'Ввести вручную', state=Form.phone_number)
+async def manual_phone_number(message: types.Message):
+    await Form.manual_phone_number.set()
+    await message.answer('Пожалуйста, введите ваш номер телефона:')
+
+@dp.message_handler(state=Form.manual_phone_number)
+async def receive_manual_phone_number(message: types.Message, state: FSMContext):
+    user_data['phone_number'] = message.text
+    await send_summary(message, state)
+
+@dp.message_handler(content_types=['contact'], state=Form.phone_number)
+async def receive_phone_number(message: types.Message, state: FSMContext):
+    user_data['phone_number'] = message.contact.phone_number
+    await send_summary(message, state)
+
+async def send_summary(message: types.Message, state: FSMContext):
+    summary = f"Buyurtmachini ismi: {user_data['name']}\n\nYetkazib berish joyi: {user_data['location']}\n\nTelefon raqami: {user_data['phone_number']}"
+    await send_data_to_telegram(summary)
+    inline_markup = ReplyKeyboardMarkup(resize_keyboard=True)
+    inline_markup.add(KeyboardButton('Открыть веб страницу', web_app=WebAppInfo(url='https://shukuril.github.io/php_bot/')))
+    await message.answer('Спасибо! Вот информация о вашем заказе:\n' + summary, reply_markup=inline_markup)
+    await state.finish()
 
 @dp.message_handler(content_types=['web_app_data'])
 async def web_app(message: types.Message):
-    try:
-        res = json.loads(message.web_app_data.data)
-        await send_data_to_telegram(res)
-    except Exception as e:
-        print("Error processing web app data:", e)
+    res = json.loads(message.web_app_data.data)
+    await send_data_to_telegram(res)
 
 @dp.message_handler(commands=['fetch_data'])
 async def fetch_and_send_data(message: types.Message):
-    website_data = fetch_data_from_website()
+    website_data = await fetch_data_from_website()
     if website_data:
         await send_data_to_telegram(json.dumps(website_data, indent=4))
         await message.answer("Data fetched from the website sent to Telegram.")
     else:
         await message.answer("Failed to fetch data from the website.")
 
-def main():
-    app = QApplication(sys.argv)
-    web = QWebEngineView()
-    web.load('')
-    web.show()
-    sys.exit(app.exec_())
-
-if __name__ == "__main__":
-    # Start the PyQt5 application
-    main()
-    
-    # Start the Telegram bot polling
-    executor.start_polling(dp, skip_updates=True)
+# Start polling
+executor.start_polling(dp, skip_updates=True)
