@@ -65,8 +65,8 @@ function buyButtonClicked() {
         return;
     }
 
-    // Формирование сообщения с деталями заказа
-    let message = "Детали заказа:\n";
+    // Собираем данные о каждом товаре в корзине
+    let products = [];
     items.forEach(item => {
         let imgSrc = item.querySelector('.cart-img').src;
         let title = item.querySelector('.cart-product-title').innerText;
@@ -75,11 +75,18 @@ function buyButtonClicked() {
         let size = item.querySelector('.cart-size').innerText.replace('Размер: ', '');
         let color = item.querySelector('.cart-color').innerText.replace('Цвет: ', '');
 
-        message += `\nФото: ${imgSrc}\nИмя: ${title}\nЦена: ${price}\nКол-во: ${quantity}\nРазмер: ${size}\nЦвет: ${color}\n===================\n`;
+        products.push({ 
+            imgSrc: imgSrc,
+            title: title,
+            price: price,
+            quantity: quantity,
+            size: size,
+            color: color
+        });
     });
 
     if (tg) {
-        tg.sendData(message); // Отправка форматированного сообщения
+        tg.sendData(JSON.stringify(products)); // Отправка данных о товарах в виде массива JSON
         // Очистка корзины после покупки
         while (cartContent.firstChild) {
             cartContent.removeChild(cartContent.firstChild);
@@ -89,6 +96,7 @@ function buyButtonClicked() {
         console.error("Telegram Web App недоступен.");
     }
 }
+
 
 // Удаление товара из корзины
 function removeItemFromCart(event) {
